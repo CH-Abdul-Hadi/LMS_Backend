@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 
+/*
+tries to connect to mongoDB
+on fail give error and exits server
+*/
 const connectDB = async () => {
   try {
     const connectionInstance = await mongoose.connect(
