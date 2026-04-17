@@ -14,7 +14,7 @@ const courseSchema = new Schema(
       required: true,
       validate: {
         validator: async function (value) {
-          const user = mongoose.model("User").findById(value);
+          const user = await mongoose.model("User").findById(value);
           return user && user.role === "Instructor";
         },
         message: "Role must be Instructor to upload course",
@@ -23,6 +23,7 @@ const courseSchema = new Schema(
     title: {
       type: String,
       required: true,
+      unique: true,
     },
     description: {
       type: String,
@@ -31,6 +32,15 @@ const courseSchema = new Schema(
     thumbnail: {
       type: String,
       required: true,
+    },
+    lectures: [{ type: Schema.Types.ObjectId, ref: "Lesson" }],
+    progress: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true },

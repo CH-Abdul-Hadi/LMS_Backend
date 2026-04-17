@@ -11,6 +11,10 @@ const lessonSchema = new Schema(
       ref: "Course",
       required: true,
     },
+    lectureNo: {
+      type: Number,
+      required: true,
+    },
     title: {
       type: String,
       required: true,
@@ -22,9 +26,11 @@ const lessonSchema = new Schema(
     thumbnail: {
       type: String,
     },
-    duration:{
-        type:numb
-    }
+    duration: {
+      type: numb,
+    },
+    status: Boolean,
+    default: true,
   },
   { timestamps: true },
 );

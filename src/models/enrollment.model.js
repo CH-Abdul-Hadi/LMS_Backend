@@ -24,9 +24,7 @@ const enrollmentSchema = new Schema(
       ref: "Course",
       required: true,
     },
-    progress: {
-      type: Number,
-    },
+    
   },
   { timestamps: true },
 );
