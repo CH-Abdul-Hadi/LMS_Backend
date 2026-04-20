@@ -27,10 +27,9 @@ const lessonSchema = new Schema(
       type: String,
     },
     duration: {
-      type: numb,
+      type: Number,
     },
-    status: Boolean,
-    default: true,
+    status: { type: Boolean, default: true },
   },
   { timestamps: true },
 );

@@ -2,7 +2,7 @@ import { ApiResponse } from "../Utils/ApiResponse.js";
 import { ApiError } from "../Utils/ApiError.js";
 import { asyncHandler } from "../Utils/asyncHandler.js";
 import { Course } from "../models/course.model.js";
-import { Lesson, Lesson } from "../models/lesson.model.js";
+import { Lesson } from "../models/lesson.model.js";
 import { uploadToCloudinary } from "../configs/cloudinary.config.js";
 
 /*
@@ -17,7 +17,7 @@ const cerateLesson = asyncHandler(async (req, res) => {
   const { course_id, lectureNo, title, content_url, thumbnail, duration } =
     req.body;
 
-  if (!title || !course_id || lectureNo || duration) {
+  if (!title || !course_id || !lectureNo || !duration) {
     throw new ApiError(400, "All fields required");
   }
 
@@ -102,62 +102,23 @@ const updateLesson = asyncHandler(async (req, res) => {
     );
 });
 
-const enableLesson = asyncHandler(async (req, res) => {
-  const lessonId = req.params._id;
+const toggleLessonStatus = asyncHandler(async (req, res) => {
+  const { _id } = req.params;
 
-  const lesson = await Lesson.findById(lessonId);
+  const lesson = await Lesson.findById(_id);
 
   if (!lesson) {
-    return res.status(400).json(new ApiError(400, "Course not found"));
+    throw new ApiError(404, "Lesson not found");
   }
 
-  const status = lesson.status;
+  lesson.status = !lesson.status;
+  await lesson.save();
 
-  if (status) {
-    res.status(400).json(new ApiError(400, "Course is already enabled"));
-  }
-
-  const enabledLesson = await Lesson.findByIdAndUpdate(
-    lessonId,
-    { status: true },
-    { new: true },
-  );
+  const stateMessage = lesson.status ? "enabled" : "disabled";
 
   return res
     .status(200)
-    .json(new ApiResponse(200, enabledLesson, "Lesson enable successfully"));
+    .json(new ApiResponse(200, lesson, `Lesson ${stateMessage} successfully`));
 });
 
-const disableLesson = asyncHandler(async (req, res) => {
-  const lessonId = req.params._id;
-
-  const lesson = await Lesson.findById(lessonId);
-
-  if (!lesson) {
-    return res.status(400).json(new ApiError(400, "Lesson not found"));
-  }
-
-  const status = lesson.status;
-
-  if (!status) {
-    res.status(400).json(new ApiError(400, "Lesson is already disabled"));
-  }
-
-  const disabledLesson = await Lesson.findByIdAndUpdate(
-    lessonId,
-    { status: false },
-    { new: true },
-  );
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, disabledLesson, "Lesson disable successfully"));
-});
-
-export {
-  cerateLesson,
-  getLessonByCourse,
-  updateLesson,
-  enableLesson,
-  disableLesson,
-};
+export { cerateLesson, getLessonByCourse, updateLesson, toggleLessonStatus };

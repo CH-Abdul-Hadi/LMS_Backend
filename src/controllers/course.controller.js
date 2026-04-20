@@ -22,7 +22,7 @@ create course
 const createCourse = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
-  if (!title && !description ) {
+  if (!title && !description) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -36,7 +36,6 @@ const createCourse = asyncHandler(async (req, res) => {
       .json(new ApiResponse(400, null, "Product already exists"));
 
   let thumbnailURL = "";
-
 
   if (req?.file?.buffer) {
     try {
@@ -136,68 +135,24 @@ const updateCourse = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedCourse, "course successfully update"));
 });
 
-/*
-enableCourse
-get id
-see if id present
-check status
-*/
-const enableCourse = asyncHandler(async (req, res) => {
-  const courseId = req.params._id;
+const toggleCourseStatus = asyncHandler(async (req, res) => {
+  const { _id } = req.params;
 
-  const course = await Course.findById(courseId);
+  const course = await Course.findById(_id);
 
   if (!course) {
-    return res.status(400).json(new ApiError(400, "Course not found"));
+    throw new ApiError(404, "Course not found");
   }
 
-  const status = course.status;
+  course.status = !course.status;
 
-  if (status) {
-    res.status(400).json(new ApiError(400, "Course is already enabled"));
-  }
+  await course.save();
 
-  const enabledCourse = await Course.findByIdAndUpdate(
-    courseId,
-    { status: true },
-    { new: true },
-  );
+  const action = course.status ? "enabled" : "disabled";
 
   return res
     .status(200)
-    .json(new ApiResponse(200, enabledCourse, "Course enable successfully"));
-});
-
-/*
-disableCourse
-get id
-see if id present
-check status
-*/
-const disableCourse = asyncHandler(async (req, res) => {
-  const courseId = req.params._id;
-
-  const course = await Course.findById(courseId);
-
-  if (!course) {
-    return res.status(400).json(new ApiError(400, "Course not found"));
-  }
-
-  const status = course.status;
-
-  if (!status) {
-    res.status(400).json(new ApiError(400, "Course is already disabled"));
-  }
-
-  const disabledCourse = await Course.findByIdAndUpdate(
-    courseId,
-    { status: false },
-    { new: true },
-  );
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, disabledCourse, "Course disable successfully"));
+    .json(new ApiResponse(200, course, `Course ${action} successfully`));
 });
 
 export {
@@ -205,6 +160,5 @@ export {
   getAllCourse,
   getCourseById,
   updateCourse,
-  enableCourse,
-  disableCourse,
+  toggleCourseStatus,
 };
