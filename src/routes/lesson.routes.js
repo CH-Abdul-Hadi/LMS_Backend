@@ -49,7 +49,7 @@ router.route("/:id").patch(
   updateLesson,
 );
 
-router.route("toggle-status/:id").patch(toggleLessonStatus);
+router.route("/toggle-status/:id").patch(toggleLessonStatus)
 
 export default router
 
