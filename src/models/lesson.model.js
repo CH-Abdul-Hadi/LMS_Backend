@@ -12,7 +12,7 @@ const lessonSchema = new Schema(
       required: true,
     },
     lectureNo: {
-      type: Number,
+      type: String,
       required: true,
     },
     title: {
@@ -27,7 +27,7 @@ const lessonSchema = new Schema(
       type: String,
     },
     duration: {
-      type: Number,
+      type: String,
     },
     status: { type: Boolean, default: true },
   },

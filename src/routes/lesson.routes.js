@@ -28,13 +28,11 @@ const upload = multer({
 
 const router = Router()
 
-router.route("/")
-  .get(
+router.route("/").get(
     verifyJWT,
     verifyPermission(["Instructor", "Student"]),
     getLessonByCourse,
-  )
-  .post(
+  ).post(
     verifyJWT,
     verifyPermission(["Instructor"]),
     upload.fields([
@@ -43,6 +41,7 @@ router.route("/")
     ]),
     cerateLesson,
   );
+
 
 router.route("/:id").patch(
   verifyJWT,

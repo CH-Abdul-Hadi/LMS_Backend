@@ -20,8 +20,11 @@ const cerateLesson = asyncHandler(async (req, res) => {
   if (!title || !course_id || !lectureNo || !duration) {
     throw new ApiError(400, "All fields required");
   }
+  console.log(course_id);
 
   const courseExist = await Course.findById(course_id);
+  console.log(courseExist);
+  
 
   if (!courseExist) {
     throw new ApiError(400, "Course not found");
@@ -62,12 +65,21 @@ const cerateLesson = asyncHandler(async (req, res) => {
     thumbnail: thumbnailUrl,
   });
 
+  const updatedCourse = await Course.findByIdAndUpdate(
+  course_id,
+  { 
+    $push: { lectures: lesson._id } 
+  },
+  { new: true } // returns the updated document
+);
+
   return res
     .status(200)
     .json(new ApiResponse(200, lesson, "lesson uploaded successfully"));
 });
 
 const getLessonByCourse = asyncHandler(async (req, res) => {
+  
   const { course_id } = req.body;
 
   const lesson = await Lesson.find({ course_id: course_id }).sort("order");
@@ -82,7 +94,9 @@ const getLessonByCourse = asyncHandler(async (req, res) => {
 });
 
 const updateLesson = asyncHandler(async (req, res) => {
-  const { lessonId } = req.params._id;
+  const lessonId  = req.params.id;
+  console.log(lessonId);
+  
 
   const lesson = await Lesson.findById(lessonId);
 
@@ -97,13 +111,12 @@ const updateLesson = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      200,
       new ApiResponse(200, updatedLesson, "lesson successfully updated"),
     );
 });
 
 const toggleLessonStatus = asyncHandler(async (req, res) => {
-  const { _id } = req.params;
+  const _id  = req.params.id;
 
   const lesson = await Lesson.findById(_id);
 

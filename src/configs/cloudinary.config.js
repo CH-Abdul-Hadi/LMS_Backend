@@ -12,16 +12,23 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const uploadToCloudinary = (buffer, options = {}) => {
-  return new promise((resolve, reject) => {
+/**
+ * Uploads a buffer to Cloudinary using a stream.
+ * @param {Buffer} buffer
+ * @param {Object} options
+ */
+
+const uploadToCloudinary = (buffer, options={}) => {
+  return new Promise((resolve, reject) => {
     const uploadOptions = {
-      folder: "lms_data",
-      resource_type: auto,
-      ...options,
+      folder: "",
+      resource_type: "auto",
+      ...options
     };
 
     const uploadStream = cloudinary.uploader.upload_stream(
       uploadOptions,
+      
       (error, result) => {
         if (error) {
           console.error("Cloudinary Upload Error: ", error);

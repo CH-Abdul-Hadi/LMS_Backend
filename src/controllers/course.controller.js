@@ -40,14 +40,16 @@ const createCourse = asyncHandler(async (req, res) => {
   if (req?.file?.buffer) {
     try {
       const result = await uploadToCloudinary(req.file.buffer);
-      thumbnailURL = result;
+      thumbnailURL = result.secure_url;
     } catch (error) {
       return res
         .status(500)
         .json(
-          500,
-          null,
-          error.message || "Error while uploading course Thumbnail",
+          new ApiError(
+            500,
+            null,
+            error.message || "Error while uploading course Thumbnail",
+          ),
         );
     }
 
@@ -55,10 +57,14 @@ const createCourse = asyncHandler(async (req, res) => {
       title,
       description,
       thumbnail: thumbnailURL,
-      instructor: req.body?.user._id,
+      instructor: req.user._id,
     });
 
-    return res.status(200).json(200, course, "New course successfully created");
+    console.log(course);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, course, "New course successfully created"));
   }
 });
 
@@ -97,7 +103,8 @@ see if id present
 return
 */
 const getCourseById = asyncHandler(async (req, res) => {
-  const courseId = req.params._id;
+  
+  const courseId = req.params.id;
 
   const course = await Course.findById(courseId);
 
@@ -136,9 +143,12 @@ const updateCourse = asyncHandler(async (req, res) => {
 });
 
 const toggleCourseStatus = asyncHandler(async (req, res) => {
-  const { _id } = req.params;
+  
+  const id  = req.params.id;
 
-  const course = await Course.findById(_id);
+  const course = await Course.findById(id);
+  console.log(course);
+  
 
   if (!course) {
     throw new ApiError(404, "Course not found");

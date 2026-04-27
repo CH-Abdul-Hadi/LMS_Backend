@@ -36,7 +36,7 @@ export const verifyPermission = (roles = []) => {
     if (!req.user?._id) {
       return res
         .status(401)
-        .json(new ApiResponse(401, null, "unauth.jsorized request"));
+        .json(new ApiResponse(401, null, "unauthorized request"));
     }
 
     if (!roles.includes(req.user.role)) {
