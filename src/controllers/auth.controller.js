@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { User } from "../models/users.model.js";
 import { ApiError } from "../Utils/ApiError.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 import { asyncHandler } from "../Utils/asyncHandler.js";
+import sentEmail from "../Utils/email.js";
 
 /*
 generate access token
@@ -55,7 +57,17 @@ const registerUser = asyncHandler(async (req, res) => {
     role,
   });
 
-  console.log(user);
+  try {
+    var a = await sentEmail({
+      to: email,
+      subject: `Thanks for registering to lms`,
+      text: "We welcome you to our lms",
+    });
+  } catch (error) {
+    console.error("error while sending email: ", error);
+  }
+
+  console.log(a);
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken",
@@ -202,4 +214,100 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { loginUser, logoutUser, registerUser, refreshAccessToken };
+/*
+  forgotPassword
+  - generate a secure random token (32 bytes)
+  - store its SHA-256 hash + expiry (15 min) on the user document
+  - email the raw token to the user as a reset link
+*/
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  const user = await User.findOne({ email });
+
+  // Always return 200 to prevent user enumeration
+  if (!user) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "If that email exists, a reset link has been sent"));
+  }
+
+  // Generate raw token — sent to user
+  const rawToken = crypto.randomBytes(32).toString("hex");
+
+  // Store only the hash in the DB
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  user.passwordResetToken = hashedToken;
+  user.passwordResetExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  await user.save({ validateBeforeSave: false });
+
+  const resetURL = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${rawToken}`;
+
+  try {
+    await sentEmail({
+      to: user.email,
+      subject: "LMS — Password Reset Request",
+      text: `You requested a password reset. Click the link below (valid for 15 minutes):\n\n${resetURL}\n\nIf you did not request this, ignore this email.`,
+      html: `<p>You requested a password reset.</p><p><a href="${resetURL}">Reset my password</a> (valid for 15 minutes)</p><p>If you did not request this, ignore this email.</p>`,
+    });
+  } catch {
+    // Roll back token if email fails
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(500, "Failed to send reset email. Please try again.");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "If that email exists, a reset link has been sent"));
+});
+
+/*
+  resetPassword
+  - receive raw token from the URL
+  - hash it and compare with the stored hash
+  - check expiry
+  - set new password, clear token fields
+*/
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    throw new ApiError(400, "Token and new password are required");
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpiry: { $gt: new Date() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired reset token");
+  }
+
+  user.password = newPassword;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpiry = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password reset successful. You can now log in."));
+});
+
+export {
+  loginUser,
+  logoutUser,
+  registerUser,
+  refreshAccessToken,
+  forgotPassword,
+  resetPassword,
+};

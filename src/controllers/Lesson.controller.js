@@ -80,7 +80,7 @@ const cerateLesson = asyncHandler(async (req, res) => {
 
 const getLessonByCourse = asyncHandler(async (req, res) => {
   
-  const { course_id } = req.body;
+  const { course_id } = req.query;
 
   const lesson = await Lesson.find({ course_id: course_id }).sort("order");
 
@@ -134,4 +134,24 @@ const toggleLessonStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, lesson, `Lesson ${stateMessage} successfully`));
 });
 
-export { cerateLesson, getLessonByCourse, updateLesson, toggleLessonStatus };
+const deleteLesson = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const lesson = await Lesson.findById(id);
+  if (!lesson) {
+    throw new ApiError(404, "Lesson not found");
+  }
+
+  // Pull the lesson ID out of the parent course's lectures array
+  await Course.findByIdAndUpdate(lesson.course_id, {
+    $pull: { lectures: lesson._id },
+  });
+
+  await Lesson.findByIdAndDelete(id);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Lesson deleted successfully"));
+});
+
+export { cerateLesson, getLessonByCourse, updateLesson, toggleLessonStatus, deleteLesson };

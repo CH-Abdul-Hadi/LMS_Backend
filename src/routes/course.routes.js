@@ -6,6 +6,8 @@ import {
   getCourseById,
   updateCourse,
   toggleCourseStatus,
+  getMyCourses,
+  deleteCourse,
 } from "../controllers/course.controller.js";
 import { ApiError } from "../Utils/ApiError.js";
 import { verifyJWT, verifyPermission } from "../middlewares/auth.middleware.js";
@@ -33,11 +35,19 @@ router
     createCourse,
   );
 
+// Instructor: fetch only their own courses
+router
+  .route("/my")
+  .get(verifyJWT, verifyPermission(["Instructor"]), getMyCourses);
+
 router
   .route("/:id")
   .get(verifyJWT, verifyPermission(["Instructor", "Student"]), getCourseById)
-  .patch(verifyJWT, verifyPermission(["Instructor"]), updateCourse);
+  .patch(verifyJWT, verifyPermission(["Instructor"]), updateCourse)
+  .delete(verifyJWT, verifyPermission(["Instructor"]), deleteCourse);
 
-router.route("/toggle-status/:id").patch(toggleCourseStatus);
+router
+  .route("/toggle-status/:id")
+  .patch(verifyJWT, verifyPermission(["Instructor"]), toggleCourseStatus);
 
-export default router
+export default router;

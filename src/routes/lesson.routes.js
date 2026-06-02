@@ -5,6 +5,7 @@ import {
   getLessonByCourse,
   updateLesson,
   toggleLessonStatus,
+  deleteLesson,
 } from "../controllers/Lesson.controller.js";
 import { ApiError } from "../Utils/ApiError.js";
 import { verifyJWT, verifyPermission } from "../middlewares/auth.middleware.js";
@@ -26,13 +27,12 @@ const upload = multer({
   },
 });
 
-const router = Router()
+const router = Router();
 
-router.route("/").get(
-    verifyJWT,
-    verifyPermission(["Instructor", "Student"]),
-    getLessonByCourse,
-  ).post(
+router
+  .route("/")
+  .get(verifyJWT, verifyPermission(["Instructor", "Student"]), getLessonByCourse)
+  .post(
     verifyJWT,
     verifyPermission(["Instructor"]),
     upload.fields([
@@ -42,14 +42,11 @@ router.route("/").get(
     cerateLesson,
   );
 
+router
+  .route("/:id")
+  .patch(verifyJWT, verifyPermission(["Instructor"]), updateLesson)
+  .delete(verifyJWT, verifyPermission(["Instructor"]), deleteLesson);
 
-router.route("/:id").patch(
-  verifyJWT,
-  verifyPermission(["Instructor"]),
-  updateLesson,
-);
+router.route("/toggle-status/:id").patch(verifyJWT, verifyPermission(["Instructor"]), toggleLessonStatus);
 
-router.route("/toggle-status/:id").patch(toggleLessonStatus)
-
-export default router
-
+export default router;

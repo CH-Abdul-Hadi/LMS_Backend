@@ -2,6 +2,7 @@ import { ApiResponse } from "../Utils/ApiResponse.js";
 import { ApiError } from "../Utils/ApiError.js";
 import { asyncHandler } from "../Utils/asyncHandler.js";
 import { Course } from "../models/course.model.js";
+import { Lesson } from "../models/lesson.model.js";
 import { uploadToCloudinary } from "../configs/cloudinary.config.js";
 
 /*
@@ -125,7 +126,7 @@ take new values
 update
 */
 const updateCourse = asyncHandler(async (req, res) => {
-  const courseId = req.params._id;
+  const courseId = req.params.id;
 
   const course = await Course.findById(courseId);
 
@@ -165,10 +166,66 @@ const toggleCourseStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, course, `Course ${action} successfully`));
 });
 
+/*
+  getMyCourses
+  - instructor fetches only the courses they created
+  - supports ?search= and ?status= query params
+*/
+const getMyCourses = asyncHandler(async (req, res) => {
+  const { search, status } = req.query;
+  const query = { instructor: req.user._id };
+
+  if (status !== undefined) {
+    query.status = status === "true";
+  }
+
+  if (search) {
+    query.title = { $regex: search, $options: "i" };
+  }
+
+  const courses = await Course.find(query)
+    .populate("lectures", "title lectureNo duration status")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, courses, "Your courses fetched successfully"));
+});
+
+/*
+  deleteCourse
+  - only the instructor who created it can delete
+  - hard-deletes the document (use toggleCourseStatus for soft disable)
+*/
+
+const deleteCourse = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const course = await Course.findById(id);
+  if (!course) {
+    throw new ApiError(404, "Course not found");
+  }
+
+  if (String(course.instructor) !== String(req.user._id)) {
+    throw new ApiError(403, "You are not authorized to delete this course");
+  }
+
+  // Delete all lessons belonging to this course
+  await Lesson.deleteMany({ course_id: id });
+
+  await Course.findByIdAndDelete(id);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Course and its lessons deleted successfully"));
+});
+
 export {
   createCourse,
   getAllCourse,
   getCourseById,
   updateCourse,
   toggleCourseStatus,
+  getMyCourses,
+  deleteCourse,
 };

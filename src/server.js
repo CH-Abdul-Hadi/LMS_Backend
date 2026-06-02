@@ -1,16 +1,18 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
 import express from "express";
 import connectDB from "./configs/db.config.js";
 import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
 import lessonRouter from "./routes/lesson.routes.js";
 import courseRouter from "./routes/course.routes.js";
+import enrollmentRouter from "./routes/enrolment.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
-dotenv.config();
 
 app.use(express.json());
 app.use(cookieParser());
@@ -40,6 +42,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/lesson", lessonRouter);
 app.use("/api/v1/course", courseRouter);
+app.use("/api/v1/enrollment", enrollmentRouter);
 
 app.use(errorHandler)
 
