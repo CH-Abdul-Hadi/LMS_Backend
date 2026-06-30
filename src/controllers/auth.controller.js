@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 import { User } from "../models/users.model.js";
 import { ApiError } from "../Utils/ApiError.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
@@ -58,7 +59,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   try {
-    var a = await sentEmail({
+    await sentEmail({
       to: email,
       subject: `Thanks for registering to lms`,
       text: "We welcome you to our lms",
@@ -66,8 +67,6 @@ const registerUser = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error("error while sending email: ", error);
   }
-
-  console.log(a);
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken",
@@ -118,16 +117,20 @@ const loginUser = asyncHandler(async (req, res) => {
   user.refreshToken = refreshToken;
   await user.save({ validateBeforeSave: false });
 
-  console.log(user);
-
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken",
   );
 
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "strict",
+    // secure: true,  // Uncomment in production (requires HTTPS)
+  };
+
   return res
     .status(200)
-    .cookie("accessToken", accessToken)
-    .cookie("refreshToken", refreshToken)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json(
       new ApiResponse(
         200,
@@ -157,10 +160,15 @@ const logoutUser = asyncHandler(async (req, res) => {
     { new: true },
   );
 
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "strict",
+  };
+
   return res
     .status(200)
-    .clearCookie("accessToken")
-    .clearCookie("refreshToken")
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
     .json(new ApiResponse(200, {}, "User logout Successful"));
 });
 
@@ -198,10 +206,15 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generateAccessToken(user._id);
 
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: "strict",
+    };
+
     return res
       .status(200)
-      .cookie("accessToken", accessToken)
-      .cookie("refreshToken", refreshToken)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .cookie("refreshToken", refreshToken, cookieOptions)
       .json(
         new ApiResponse(
           200,
@@ -293,7 +306,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid or expired reset token");
   }
 
-  user.password = newPassword;
+  user.password = await bcrypt.hash(newPassword, 10);
   user.passwordResetToken = undefined;
   user.passwordResetExpiry = undefined;
   await user.save({ validateBeforeSave: false });

@@ -1,7 +1,7 @@
 import multer from "multer";
 import { Router } from "express";
 import {
-  cerateLesson,
+  createLesson,
   getLessonByCourse,
   updateLesson,
   toggleLessonStatus,
@@ -12,7 +12,7 @@ import { verifyJWT, verifyPermission } from "../middlewares/auth.middleware.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: 50 * 1024 * 1024,
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "video") {
       if (!file.mimetype.startsWith("video/")) {
@@ -39,7 +39,7 @@ router
       { name: "video", maxCount: 1 },
       { name: "thumbnail", maxCount: 1 },
     ]),
-    cerateLesson,
+    createLesson,
   );
 
 router

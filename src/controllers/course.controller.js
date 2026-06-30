@@ -23,7 +23,7 @@ create course
 const createCourse = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
-  if (!title && !description) {
+  if (!title || !description) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -46,27 +46,25 @@ const createCourse = asyncHandler(async (req, res) => {
       return res
         .status(500)
         .json(
-          new ApiError(
+          new ApiResponse(
             500,
             null,
             error.message || "Error while uploading course Thumbnail",
           ),
         );
     }
-
-    const course = await Course.create({
-      title,
-      description,
-      thumbnail: thumbnailURL,
-      instructor: req.user._id,
-    });
-
-    console.log(course);
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, course, "New course successfully created"));
   }
+
+  const course = await Course.create({
+    title,
+    description,
+    thumbnail: thumbnailURL,
+    instructor: req.user._id,
+  });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, course, "New course successfully created"));
 });
 
 /*
@@ -110,7 +108,7 @@ const getCourseById = asyncHandler(async (req, res) => {
   const course = await Course.findById(courseId);
 
   if (!course) {
-    return res.status(400).json(new ApiError(400, "Course not found"));
+    return res.status(404).json(new ApiResponse(404, null, "Course not found"));
   }
 
   return res
@@ -131,7 +129,7 @@ const updateCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(courseId);
 
   if (!course) {
-    return res.status(400).json(new ApiError(400, "Course not found"));
+    return res.status(404).json(new ApiResponse(404, null, "Course not found"));
   }
 
   const updatedCourse = await Course.findByIdAndUpdate(courseId, req.body, {
@@ -148,11 +146,13 @@ const toggleCourseStatus = asyncHandler(async (req, res) => {
   const id  = req.params.id;
 
   const course = await Course.findById(id);
-  console.log(course);
-  
 
   if (!course) {
     throw new ApiError(404, "Course not found");
+  }
+
+  if (String(course.instructor) !== String(req.user._id)) {
+    throw new ApiError(403, "You are not authorized to modify this course");
   }
 
   course.status = !course.status;

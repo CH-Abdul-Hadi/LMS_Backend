@@ -6,25 +6,22 @@ import { Lesson } from "../models/lesson.model.js";
 import { uploadToCloudinary } from "../configs/cloudinary.config.js";
 
 /*
-cerate 
+create 
 getAll
 update
 enable
 disable
 */
 
-const cerateLesson = asyncHandler(async (req, res) => {
+const createLesson = asyncHandler(async (req, res) => {
   const { course_id, lectureNo, title, content_url, thumbnail, duration } =
     req.body;
 
   if (!title || !course_id || !lectureNo || !duration) {
     throw new ApiError(400, "All fields required");
   }
-  console.log(course_id);
-
   const courseExist = await Course.findById(course_id);
-  console.log(courseExist);
-  
+
 
   if (!courseExist) {
     throw new ApiError(400, "Course not found");
@@ -66,12 +63,12 @@ const cerateLesson = asyncHandler(async (req, res) => {
   });
 
   const updatedCourse = await Course.findByIdAndUpdate(
-  course_id,
-  { 
-    $push: { lectures: lesson._id } 
-  },
-  { new: true } // returns the updated document
-);
+    course_id,
+    {
+      $push: { lectures: lesson._id }
+    },
+    { new: true } // returns the updated document
+  );
 
   return res
     .status(200)
@@ -79,13 +76,13 @@ const cerateLesson = asyncHandler(async (req, res) => {
 });
 
 const getLessonByCourse = asyncHandler(async (req, res) => {
-  
+
   const { course_id } = req.query;
 
-  const lesson = await Lesson.find({ course_id: course_id }).sort("order");
+  const lesson = await Lesson.find({ course_id: course_id }).sort("lectureNo");
 
-  if (!lesson) {
-    throw new ApiError(400, "lesson not found");
+  if (!lesson || lesson.length === 0) {
+    return res.status(200).json(new ApiResponse(200, [], "No lessons found for this course"));
   }
 
   return res
@@ -94,9 +91,7 @@ const getLessonByCourse = asyncHandler(async (req, res) => {
 });
 
 const updateLesson = asyncHandler(async (req, res) => {
-  const lessonId  = req.params.id;
-  console.log(lessonId);
-  
+  const lessonId = req.params.id;
 
   const lesson = await Lesson.findById(lessonId);
 
@@ -116,7 +111,7 @@ const updateLesson = asyncHandler(async (req, res) => {
 });
 
 const toggleLessonStatus = asyncHandler(async (req, res) => {
-  const _id  = req.params.id;
+  const _id = req.params.id;
 
   const lesson = await Lesson.findById(_id);
 
@@ -154,4 +149,4 @@ const deleteLesson = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Lesson deleted successfully"));
 });
 
-export { cerateLesson, getLessonByCourse, updateLesson, toggleLessonStatus, deleteLesson };
+export { createLesson, getLessonByCourse, updateLesson, toggleLessonStatus, deleteLesson };

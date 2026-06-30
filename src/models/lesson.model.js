@@ -21,7 +21,7 @@ const lessonSchema = new Schema(
     },
     content_url: {
       type: String,
-      required: true,
+      default: "",
     },
     thumbnail: {
       type: String,

@@ -9,7 +9,7 @@ import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
 import lessonRouter from "./routes/lesson.routes.js";
 import courseRouter from "./routes/course.routes.js";
-import enrollmentRouter from "./routes/enrolment.routes.js";
+import enrollmentRouter from "./routes/enrollment.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();

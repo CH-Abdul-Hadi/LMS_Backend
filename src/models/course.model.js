@@ -31,7 +31,7 @@ const courseSchema = new Schema(
     },
     thumbnail: {
       type: String,
-      required: true,
+      default: "",
     },
     lectures: [{ type: Schema.Types.ObjectId, ref: "Lesson" }],
     progress: {
